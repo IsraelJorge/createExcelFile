@@ -1,10 +1,10 @@
 import { data } from "./data";
-import { ExampleComponent } from "./ExampleComponent";
+import { XlsxControllBoard } from "./XlsxControllBoard";
 
 function App() {
   return (
     <div className="App">
-      <ExampleComponent data={data} />
+      <XlsxControllBoard data={data} />
     </div>
   );
 }

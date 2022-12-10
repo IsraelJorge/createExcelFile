@@ -1,26 +1,19 @@
-import { data } from "./data";
+import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import * as XlsxPopulate from "xlsx-populate/browser/xlsx-populate";
-import { ReportControllBoardData } from "./types";
 
-type ExampleComponentProps = {
-  data: ReportControllBoardData[];
-};
+export const XlsxControllBoard = ({ data }) => {
+  const [urlFile, setUrlFile] = useState(null);
+  
+  let tableSize;
 
-export const ExampleComponent = ({ data }: ExampleComponentProps) => {
-  let tableSize: number;
-
-  const createDownloadData = () => {
-    handleExport().then((url: any) => {
-      const downloadAnchorNode = document.createElement("a");
-      downloadAnchorNode.setAttribute("href", url);
-      downloadAnchorNode.download = "relatorio-registro-de-bordo";
-      downloadAnchorNode.click();
-      downloadAnchorNode.remove();
+  useEffect(() => {
+    handleExport().then(url => {
+      setUrlFile(url);
     });
-  };
+  }, [data]);
 
-  const s2ab = (s: string) => {
+  const s2ab = (s) => {
     const buf = new ArrayBuffer(s.length);
 
     const view = new Uint8Array(buf);
@@ -33,8 +26,8 @@ export const ExampleComponent = ({ data }: ExampleComponentProps) => {
     return buf;
   };
 
-  const workbook2blob = (workbook: XLSX.WorkBook) => {
-    const wopts: any = {
+  const workbook2blob = (workbook) => {
+    const wopts = {
       bookType: "xlsx",
       type: "binary",
     };
@@ -83,7 +76,7 @@ export const ExampleComponent = ({ data }: ExampleComponentProps) => {
       },
     ];
 
-    data.forEach((controll: any) => {
+    data.forEach((controll) => {
       table.push({
         A: controll.id.toString(),
         B: controll.attributes.functionary_id.data.attributes.registration.toString(),
@@ -122,25 +115,23 @@ export const ExampleComponent = ({ data }: ExampleComponentProps) => {
     return addStyles(workbookBlob);
   };
 
-  const dataInfo = {
-    titleRange: "A1:P2",
-  };
-
-  const addStyles = (workbookBlob: Blob) => {
-    return XlsxPopulate.fromDataAsync(workbookBlob).then((workbook: any) => {
-      workbook.sheets().forEach((sheet: any) => {
+  const addStyles = (workbookBlob) => {
+    return XlsxPopulate.fromDataAsync(workbookBlob).then((workbook) => {
+      workbook.sheets().forEach((sheet) => {
         sheet.usedRange().style({
           fontFamily: "Arial",
           verticalAlignment: "center",
-        });
+        }); //styled global
 
-        sheet.range(dataInfo.titleRange).merged(true).style({
+        const styledTitle = {
           bold: true,
           fontColor: "ffffff",
           fill: "5b9bd5",
           horizontalAlignment: "center",
           verticalAlignment: "center",
-        });
+        }
+
+        sheet.range("A1:P2").merged(true).style(styledTitle); // Titulo
 
         const columns = [
           "A",
@@ -162,7 +153,7 @@ export const ExampleComponent = ({ data }: ExampleComponentProps) => {
         ];
 
         for (let i = 0; i < columns.length; i++) {
-          sheet.column(columns[i]).width(20); // determinar o tamanho das células
+          sheet.column(columns[i]).width(30); // determinar o tamanho das células
         }
 
         const styleSubtitle = {
@@ -171,13 +162,15 @@ export const ExampleComponent = ({ data }: ExampleComponentProps) => {
           fill: "5b9bd5",
         };
 
+        sheet.row(3).height(20);
+        sheet.row(4).height(20);
         sheet.range("A3:P3").merged(true).style(styleSubtitle);
         sheet.range("A4:P4").merged(true).style(styleSubtitle);
 
-        // sheet.row(3).style(styleSubtitle);
-        // sheet.row(4).style(styleSubtitle);
-
-        sheet.row(5).style("bold", true); // Titulos da colunas em negrito
+        sheet.row(5).style({
+          bold: true,
+          horizontalAlignment: "center"
+        }); // Titulos da colunas em negrito e centralizar
 
         for (let i = 6; i <= tableSize; i++) {
           sheet.row(i).style("horizontalAlignment", "right"); //alinhar os dados a direita
@@ -186,9 +179,11 @@ export const ExampleComponent = ({ data }: ExampleComponentProps) => {
 
       return workbook
         .outputAsync()
-        .then((workbookBlob: any) => URL.createObjectURL(workbookBlob));
+        .then((workbookBlob) => URL.createObjectURL(workbookBlob));
     });
   };
 
-  return <button onClick={() => createDownloadData()}>Exportar</button>;
+  return (<a href={urlFile} data={data} download={`controle-de-bordo-${new Date().toLocaleString()}`}>
+    Exportar
+  </a>);
 };
